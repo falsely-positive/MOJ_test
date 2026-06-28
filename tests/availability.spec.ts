@@ -4,8 +4,7 @@ import { futureDate } from "../helpers/date";
 
 
 test.describe("Room availability checker", () => {
-  test.beforeEach(async ({ page }) => {
-    const homePage = new HomePage(page);
+  test.beforeEach(async ({ homePage }) => {
     await homePage.pageload();
   });
 
@@ -32,7 +31,6 @@ test.describe("Room availability checker", () => {
 
     const count = await homePage.getAvailableRoomCount();
     expect(roomTypes.length).toBe(count);
-        console.log("***** " + roomTypes);
     expect(roomTypes).toEqual(expect.arrayContaining(["Single", "Double", "Suite"]));
   });
 });

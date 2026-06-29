@@ -5,7 +5,7 @@ export class HomePage extends BasePage {
 
 private readonly checkInInput: Locator;
 private readonly checkOutInput: Locator;
-private readonly roomCards: Locator;
+readonly roomCards: Locator;
 private readonly roomTitles: Locator;
 private readonly checkAvailabilityButton: Locator;
 readonly path = "/";  
@@ -51,7 +51,14 @@ readonly path = "/";
   }
 
   async checkAvailability(): Promise<void> {
-    await this.checkAvailabilityButton.click();
+    // Wait for the date-filtered availability response so callers read the
+    // checked result, not the rooms rendered on initial page load.
+    await Promise.all([
+      this.page.waitForResponse((response) =>
+        response.url().includes("/api/room?checkin"),
+      ),
+      this.checkAvailabilityButton.click(),
+    ]);
   }
 
   async getAvailableRoomTypes(): Promise<string[]> {

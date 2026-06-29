@@ -5,7 +5,34 @@ on:
   pull_request:
     branches: [ main, master ]
 jobs:
-  test:
+  # Fast gate: API tests are browserless, so this job skips the browser install.
+  api-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Run API tests
+      run: npm run test:api
+      env:
+        ENV: production
+        ADMIN_USER: ${{ secrets.ADMIN_USER }}
+        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+    - name: Upload API blob report
+      uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: blob-api
+        path: blob-report/
+        retention-days: 30
+
+  # E2E only runs if the API gate passed — keeps failures easy to diagnose.
+  e2e-tests:
+    needs: api-tests
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
@@ -17,22 +44,50 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-    - name: Run functional tests
-      run: npm run test
+    - name: Run E2E tests
+      run: npm run test:e2e
       env:
         ENV: production
         ADMIN_USER: ${{ secrets.ADMIN_USER }}
         ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-    - uses: actions/upload-artifact@v4
+    - name: Upload E2E blob report
+      uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
+      with:
+        name: blob-e2e
+        path: blob-report/
+        retention-days: 30
+
+  # Merge the api and e2e blob reports into a single HTML report.
+  merge-report:
+    needs: [api-tests, e2e-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Download blob reports
+      uses: actions/download-artifact@v4
+      with:
+        pattern: blob-*
+        path: all-blobs
+        merge-multiple: true
+    - name: Merge into one HTML report
+      run: npx playwright merge-reports --reporter html ./all-blobs
+    - name: Upload merged report
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
 
-  # Publish the HTML report to GitHub Pages (only on pushes to main/master).
+  # Publish the merged HTML report to GitHub Pages (only on pushes to main/master).
   deploy-report:
-    needs: test
+    needs: merge-report
     if: ${{ !cancelled() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     permissions:
@@ -46,7 +101,7 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-    - name: Download report artifact
+    - name: Download merged report artifact
       uses: actions/download-artifact@v4
       with:
         name: playwright-report

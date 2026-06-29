@@ -4,15 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": " npx playwright test"
+    "test": "npx playwright test",
+    "test:e2e": "SUITE=e2e npx playwright test",
+    "test:api": "SUITE=api npx playwright test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.0.1",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "eslint": "^10.6.0",
+    "eslint-plugin-playwright": "^2.10.4",
+    "typescript-eslint": "^8.62.0"
   }
 }

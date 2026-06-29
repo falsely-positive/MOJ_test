@@ -1,6 +1,5 @@
-import { expect, test } from "../fixtures/test";
-import { LoginPage } from "../pages/loginPage";
-import { env } from "../environments";
+import { expect, test } from "../../fixtures/test";
+import { env } from "../../environments";
  
 test.describe("Test Admin Login", () => {
   test.beforeEach(async ({ loginPage }) => {
@@ -18,5 +17,14 @@ test.describe("Test Admin Login", () => {
 
     await expect(loginPage.errorMessage).toBeVisible();
     expect(await loginPage.isLoggedIn()).toBe(false);
+  });
+
+    test("Admin is authenticated within 5 seconds @performance", async ({ loginPage }) => {
+    const start = Date.now();
+    await loginPage.login(env.users.admin.Username, env.users.admin.Password);
+    const elapsed = Date.now() - start;
+
+    expect(await loginPage.isLoggedIn()).toBe(true);
+    expect(elapsed).toBeLessThanOrEqual(5000);
   });
 });

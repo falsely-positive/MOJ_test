@@ -1,6 +1,7 @@
 const environments = {
     production: {
         baseURL: "https://automationintesting.online/",
+        apiURL: "https://automationintesting.online/api",
         users: {
             admin: {
                 Username: process.env.ADMIN_USER!,
@@ -11,6 +12,7 @@ const environments = {
     },
     local: {
         baseURL: "http://localhost:8080/",
+        apiURL: "http://localhost:3000/api",
         users: {
             admin: {
                 Username: process.env.ADMIN_USER!,
